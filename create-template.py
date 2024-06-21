@@ -54,7 +54,7 @@ def generate_report(data):
     initial_header = [
         "הנדון\t\t\t: דו\"ח חקירה",
         "======================",
-        f"המבוטח\t\t: {data['last_name']}",
+        f"המבוטח\t\t: {data['full_name']}",
         f"האירוע\t\t: {data['event_type']}",
         f"מספר רישוי מבוטח\t: {data['policy_number']}",
         f"מס' רישוי צד ג'\t: {data['third_party_license_number']}",
@@ -67,39 +67,42 @@ def generate_report(data):
         add_formatted_paragraph(document, line, 14, True, alignment=WD_PARAGRAPH_ALIGNMENT.CENTER)
 
     # Sections with collapsible content
+    regular_accident_string = "כתוצאה מהתאונה נפגעו שני הרכבים המעורבים – רכבו של המבוטח "+data['third_party_vehicle_type']+" צד ג' מס' רישוי:  554-49-103 מסוג "+data['third_party_vehicle_company']+" "+data['third_party_vehicle_model']+" בצבע "+data['third_party_vehicle_color']+", "+data['third_party_manufacture_year']+" משנת ייצור"
+    stolen_string = "נגנב"
+    
     sections = [
-        ("המבוטח", [
-            "שם משפחה: " + data['last_name'],
-            "מספר תעודת זהות: " + data.get('id_number', '')  # Handle potential missing key gracefully
+        ("כללי", [
+            "נתבקשנו על ידי חברתכם לבצע חקירה בעקבות הודעת המבוטח על תאונה שארעה לו ברכבו מסוג: "+ data['vehicle_company']+" בצבע "+data['vehicle_model']+" " + data['vehicle_color'] + "," + "משנת יצור "+ data['vehicle_manufacture_year']+".",
+            ""+regular_accident_string if not data['is_stolen'] else stolen_string +"",
+            "להלן יובאו ממצאינו: "
         ]),
-        ("מסוג האירוע", [
-            "מספר רישוי רכב: " + data['car_license_number'],
-            "תאריך האירוע: " + data['event_date'],
-            "מספר תביעה: " + data['claim_number'],
-            "סוג רכב: " + data['car_type'],
-            "צבע רכב: " + data['car_color']
+        ("התביעה", [
+            "המדובר בתאונה בין המבוטח ל"+data['third_party_vehicle_type']+" צד ג'",
+            "רכב המבוטח: מס' רישוי "+data['vehicle_license_number'] + "מסוג" + data['vehicle_company'] + data['vehicle_model'] + "בצבע" + data['vehicle_color'] +"מנוע" + data['vehicle_engine_type'] + "," +"נפח מנוע "+ data['vehicle_engine_capacity'] + " סמ''ק, " + " גיר "+data['vehicle_gearbox'] + ", " + data['vehicle_number_of_doors'] + " דלתות, " + data['vehicle_number_of_airpillow'] + " כריות אוויר, " + "שנת יצור "+data['vehicle_manufacture_year'] +" .",
+            "הרכב רשום ע''ש " + data['full_name'] + ", מר'ח"+ data['vehicle_owner_name_address'] + "הרכב בבעלות " + data['vehicle_ownership_generation_number'],
+            "התאונה דווחה שהתרחשה בתאריך ה- "+data['event_date'] + "תאריך טסט אחרון: " +data['last_roadworthiness_test_date'] + ", תוקף רישיון" +data['license_expiry_date'] + " להלן צילום רישיון הרכב של המבוטח : "
         ]),
         ("פרטי הרכב", [
-            "נפח מנוע: " + data['engine_capacity'],
-            "הספק: " + data['engine_power'],
-            "תיבת הילוכים: " + data['gearbox'],
-            "מספר דלתות: " + data['number_of_doors'],
-            "שנת ייצור רכב: " + data['car_manufacture_year']
+            "נפח מנוע: " + data['vehicle_engine_capacity'],
+            "הספק: " + data['vehicle_engine_power'],
+            "תיבת הילוכים: " + data['vehicle_gearbox'],
+            "מספר דלתות: " + data['vehicle_number_of_doors'],
+            "שנת ייצור רכב: " + data['vehicle_manufacture_year']
         ]),
         ("פרטי בעל הרכב ונהג", [
-            "שם וכתובת בעל הרכב: " + data['car_owner_name_address'],
-            "שם וכתובת נהג הרכב: " + data['car_driver_name_address'],
+            "שם וכתובת בעל הרכב: " + data['vehicle_owner_name_address'],
+            "שם וכתובת נהג הרכב: " + data['vehicle_driver_name_address'],
             "תאריך מבחן כשירות אחרון: " + data['last_roadworthiness_test_date'],
             "תאריך תוקף רישיון: " + data['license_expiry_date']
         ]),
         ("פרטים נוספים ותיאור האירוע", [
-            "עיקולים/שיעובודים של הרכב: " + data['car_liens'],
+            "עיקולים/שיעובודים של הרכב: " + data['vehicle_liens'],
             "סך נסועה: " + data['total_mileage'],
-            "אמצעי מיגון של הרכב: " + data['car_security_measures'],
-            "מפתחות הרכב: " + data['car_keys'],
+            "אמצעי מיגון של הרכב: " + data['vehicle_security_measures'],
+            "מפתחות הרכב: " + data['vehicle_keys'],
             "נסיבות האירוע: " + data['event_circumstances'],
             "החקירה עצמה: " + data['investigation_details'],
-            "תמונות הרכב: " + data['car_photos'],
+            "תמונות הרכב: " + data['vehicle_photos'],
             "יומן שיחות: " + data['call_log'],
             "התכתבויות: " + data['correspondence'],
             "ציר הזמן: " + data['timeline'],
@@ -124,31 +127,43 @@ def generate_report(data):
     document.save('insurance_report.docx')
 # Example data
 data = {
-    'last_name': 'אלכסנדר שניידרמן',
-    'event_type': 'צד ג - רכב',
-    'policy_number': '80-448-38',
     'third_party_license_number': '554-49-103',
+    'third_party_vehicle_type': 'אופנוע',
+    'third_party_vehicle_company': 'ימהה',
+    'third_party_vehicle_model': 'טימקס',
+    'third_party_vehicle_color': 'כחול',
+    'third_party_policy_number': '554-49-103',
+    'third_party_manufacture_year': '2019',
+    'is_stolen': False,
+    'event_type': 'צד ג - רכב',
     'event_date': '31.12.2023',
+    'full_name': 'אלכסנדר שניידרמן',
     'claim_number': '2418022441',
-    'car_license_number': '123-45-678',
-    'car_type': 'סדאן',
-    'car_color': 'כחול',
-    'engine_capacity': '2000',
-    'engine_power': '150',
-    'gearbox': 'אוטומטית',
-    'number_of_doors': '4',
-    'car_manufacture_year': '2020',
-    'car_owner_name_address': 'אלכסנדר שניידרמן, תל אביב',
-    'car_driver_name_address': 'אלכסנדר שניידרמן, תל אביב',
+    'policy_number': '80-448-38',
+    'vehicle_license_number': '123-45-678',
+    'vehicle_company': 'קיה',
+    'vehicle_model': 'פיקנטו',
+    'vehicle_type': 'סדאן',
+    'vehicle_color': 'כחול',
+    'vehicle_engine_type': 'בנזין',
+    'vehicle_engine_capacity': '2000',
+    'vehicle_engine_power': '150',
+    'vehicle_gearbox': 'אוטומטית',
+    'vehicle_number_of_doors': '4',
+    'vehicle_number_of_airpillow': '7',
+    'vehicle_manufacture_year': '2020',
+    'vehicle_ownership_generation_number':"רביעית",
+    'vehicle_owner_name_address': 'שנקין 13 ראשל''צ',
+    'vehicle_driver_name_address': 'אלכסנדר שניידרמן, תל אביב',
+    'vehicle_liens': 'אין',
+    'vehicle_security_measures': 'אזעקה',
+    'vehicle_keys': 'שני מפתחות',
     'last_roadworthiness_test_date': '2023-01-01',
     'license_expiry_date': '2024-01-01',
-    'car_liens': 'אין',
     'total_mileage': '50000',
-    'car_security_measures': 'אזעקה',
-    'car_keys': 'שני מפתחות',
     'event_circumstances': 'רכב אחר פגע ברכב המבוטח מאחור',
     'investigation_details': 'השאלות והתשובות בחקירה...',
-    'car_photos': 'קבצים מצורפים',
+    'vehicle_photos': 'קבצים מצורפים',
     'call_log': 'יומן שיחות מאפליקציה',
     'correspondence': 'התכתבויות עם חברת הביטוח',
     'timeline': 'יומן האירוע',
