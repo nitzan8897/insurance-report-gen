@@ -1,3 +1,6 @@
+Requirements:
+Python installed
+
 Todos:
 1. Align right all paragraphs
 2. Make the dynamic tabs for all values
