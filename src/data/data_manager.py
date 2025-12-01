@@ -2,18 +2,23 @@
 """
 Data manager for handling form data persistence and widget value management.
 Uses widget handlers for clean separation of concerns.
+Supports file-based persistence by claim number.
 """
 import json
 import os
 from tkinter import messagebox
 
 from .widget_handlers import WidgetHandlerFactory
+from .file_persistence import FilePersistenceHandler
+
 
 class DataManager:
     def __init__(self):
         self.form_data = {}
         self.uploaded_video = None
         self.uploaded_image = None
+        self.file_persistence = FilePersistenceHandler()
+        self.current_claim_number = None
 
     def load_saved_data(self):
         """
@@ -121,14 +126,26 @@ class DataManager:
 
     def save_data(self):
         """
-        Saves the current form data to a JSON file.
-        Uses widget handlers for clean, maintainable code.
+        Saves the current form data.
+        If claim number exists, saves to file-based storage.
+        Otherwise falls back to single file.
         """
         try:
             data_to_save = self._collect_widget_values()
             self._add_file_paths_to_save(data_to_save)
-            self._write_to_json_file(data_to_save)
-            messagebox.showinfo("הצלחה", "הנתונים נשמרו בהצלחה!")
+
+            # Get claim number
+            claim_number = data_to_save.get('claim_number', '').strip()
+
+            if claim_number:
+                # Save to file-based storage (saved_data/claim_number.json)
+                self.file_persistence.save_by_claim_number(claim_number, data_to_save)
+                self.current_claim_number = claim_number
+                messagebox.showinfo("הצלחה", f"הנתונים נשמרו בהצלחה!\nתיק: {claim_number}")
+            else:
+                # Fallback to single file
+                self._write_to_json_file(data_to_save)
+                messagebox.showinfo("הצלחה", "הנתונים נשמרו בהצלחה!")
 
         except Exception as e:
             print(f"Error saving data: {str(e)}")
@@ -136,6 +153,47 @@ class DataManager:
                 "שגיאה",
                 f"שגיאה בשמירת הנתונים: {str(e)}"
             )
+
+    def load_by_claim_number(self, claim_number):
+        """
+        Load data for a specific claim number.
+
+        Args:
+            claim_number: Claim number to load
+        """
+        if not claim_number:
+            return
+
+        try:
+            data = self.file_persistence.load_by_claim_number(claim_number)
+            if data:
+                self.load_data_from_json(data)
+                self.current_claim_number = claim_number
+                print(f"Loaded data for claim: {claim_number}")
+            else:
+                messagebox.showwarning(
+                    "לא נמצא",
+                    f"לא נמצאו נתונים עבור תיק מספר: {claim_number}"
+                )
+        except Exception as e:
+            print(f"Error loading claim {claim_number}: {e}")
+            messagebox.showerror(
+                "שגיאה",
+                f"שגיאה בטעינת נתוני התיק: {str(e)}"
+            )
+
+    def get_recent_claims(self, limit=10):
+        """
+        Get list of recent claim numbers.
+
+        Args:
+            limit: Maximum number of claims to return
+
+        Returns:
+            list: List of claim numbers
+        """
+        all_claims = self.file_persistence.get_all_claim_numbers()
+        return all_claims[-limit:] if limit else all_claims
 
     def _collect_widget_values(self):
         """
