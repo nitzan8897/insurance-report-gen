@@ -226,9 +226,12 @@ class ReportGenerator:
             if os.path.exists(example_path):
                 # Use example as template - this preserves header/footer structure
                 doc = Document(example_path)
-                # Clear existing content but keep header/footer
-                for para in doc.paragraphs[:]:
-                    para.clear()
+                # Delete all existing paragraphs (not just clear them)
+                # Need to delete in reverse order to avoid index issues
+                for i in range(len(doc.paragraphs) - 1, -1, -1):
+                    p = doc.paragraphs[i]
+                    p_element = p._element
+                    p_element.getparent().remove(p_element)
             else:
                 # Fallback to blank document if example not found
                 doc = Document()
