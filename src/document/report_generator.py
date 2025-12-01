@@ -49,24 +49,24 @@ class ReportGenerator:
             current_date = datetime.now().strftime("%d.%m.%Y")
             ref_number = datetime.now().strftime("%d%m%y")
             
-            # Add date and reference
+            # Add date and reference (using JUSTIFY alignment like example.docx)
             date_para = self.doc_utils.make_hebrew_paragraph(
-                doc, 
+                doc,
                 f"תאריך: {current_date}",
                 bold=True,
-                alignment=WD_PARAGRAPH_ALIGNMENT.RIGHT
+                alignment=WD_PARAGRAPH_ALIGNMENT.JUSTIFY
             )
-            
+
             ref_para = self.doc_utils.make_hebrew_paragraph(
-                doc, 
+                doc,
                 f"מספר תיק: {ref_number}",
                 bold=True,
-                alignment=WD_PARAGRAPH_ALIGNMENT.RIGHT
+                alignment=WD_PARAGRAPH_ALIGNMENT.JUSTIFY
             )
 
             # Add spacing
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
             # Add recipient section
             self.doc_utils.make_hebrew_paragraph(doc, "לכבוד", bold=True)
@@ -74,7 +74,7 @@ class ReportGenerator:
 
             # Add spacing
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
             # Add report title and details
             headers = [
@@ -98,7 +98,7 @@ class ReportGenerator:
 
             # Add spacing after headers
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         except Exception as e:
             print(f"Error in generate_header: {str(e)}")
@@ -142,7 +142,7 @@ class ReportGenerator:
 
             # Add spacing after general section
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         except Exception as e:
             print(f"Error in generate_general_section: {str(e)}")
@@ -167,7 +167,7 @@ class ReportGenerator:
 
             # Add spacing after vehicle section
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         except Exception as e:
             print(f"Error in generate_vehicle_section: {str(e)}")
@@ -181,7 +181,7 @@ class ReportGenerator:
                 self.doc_utils.create_section_header(doc, "3. נסיבות האירוע")
                 self.doc_utils.make_hebrew_paragraph(doc, circumstances)
                 spacing = doc.add_paragraph()
-                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         except Exception as e:
             print(f"Error in generate_circumstances_section: {str(e)}")
@@ -195,7 +195,7 @@ class ReportGenerator:
                 self.doc_utils.create_section_header(doc, "4. סיכום")
                 self.doc_utils.make_hebrew_paragraph(doc, summary)
                 spacing = doc.add_paragraph()
-                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
         except Exception as e:
             print(f"Error in generate_summary_section: {str(e)}")
@@ -205,7 +205,7 @@ class ReportGenerator:
         """Generate the signature section of the report."""
         try:
             spacing = doc.add_paragraph()
-            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
             self.doc_utils.make_hebrew_paragraph(doc, "בכבוד רב,")
             self.doc_utils.make_hebrew_paragraph(doc, "אניגמה חקירות")
 
@@ -214,15 +214,28 @@ class ReportGenerator:
             raise
 
     def generate(self, form_data):
-        """Main method to generate the complete report."""
+        """
+        Main method to generate the complete report.
+        Uses example.docx as a template to preserve exact formatting.
+        """
         try:
-            doc = Document()
-            
-            # Configure document
-            self.doc_utils.set_document_rtl(doc)
-            self.doc_utils.add_custom_header_footer(doc)
-            
-            # Set margins
+            # Load example.docx as template instead of creating blank document
+            import os
+            example_path = os.path.join(os.path.dirname(__file__), '..', '..', 'example.docx')
+
+            if os.path.exists(example_path):
+                # Use example as template - this preserves header/footer structure
+                doc = Document(example_path)
+                # Clear existing content but keep header/footer
+                for para in doc.paragraphs[:]:
+                    para.clear()
+            else:
+                # Fallback to blank document if example not found
+                doc = Document()
+                self.doc_utils.set_document_rtl(doc)
+                self.doc_utils.add_custom_header_footer(doc)
+
+            # Set margins (matching example)
             section = doc.sections[0]
             section.left_margin = Inches(1)
             section.right_margin = Inches(1)
@@ -234,7 +247,7 @@ class ReportGenerator:
             self.generate_circumstances_section(doc, form_data)
             self.generate_summary_section(doc, form_data)
             self.generate_signature(doc)
-            
+
             # Save the document
             return self.save_document(doc)
 

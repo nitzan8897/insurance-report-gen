@@ -88,8 +88,8 @@ class DocumentUtils:
         footer_run.font.name = 'David'
         footer_run.font.size = Pt(9)
 
-    def make_hebrew_paragraph(self, doc, text, bold=False, size=11, alignment=WD_PARAGRAPH_ALIGNMENT.RIGHT):
-        """Create a hebrew paragraph with proper RTL settings"""
+    def make_hebrew_paragraph(self, doc, text, bold=False, size=11, alignment=WD_PARAGRAPH_ALIGNMENT.JUSTIFY):
+        """Create a hebrew paragraph with proper RTL settings - using JUSTIFY like example.docx"""
         paragraph = doc.add_paragraph()
         run = paragraph.add_run(text)
         run.font.name = 'David'
@@ -145,9 +145,9 @@ class DocumentUtils:
         return paragraph
 
     def add_bullet_point(self, doc, text, level=0):
-        """Add a bullet point with proper RTL formatting"""
+        """Add a bullet point with proper RTL formatting - using JUSTIFY like example.docx"""
         paragraph = doc.add_paragraph(style='List Bullet')
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         run = paragraph.add_run(text)
         self.set_run_rtl(run)
         # Add indentation based on level
