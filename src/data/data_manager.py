@@ -24,6 +24,9 @@ class DataManager:
         """
         Loads data from saved_data.json if it exists.
         If the file doesn't exist, it silently continues without error.
+
+        Returns:
+            dict: The loaded data dictionary, or None if no data found
         """
         try:
             # Check if save file exists
@@ -37,23 +40,26 @@ class DataManager:
                             # Pass the loaded data to load_data_from_json
                             self.load_data_from_json(saved_data)
                             print("Data loaded successfully")  # Debug message
+                            return saved_data
                     except json.JSONDecodeError as e:
                         print(f"Error decoding JSON: {e}")
                         messagebox.showwarning(
-                            "אזהרה", 
+                            "אזהרה",
                             "קובץ הנתונים השמורים פגום. מתחיל עם טופס ריק."
                         )
+                        return None
             else:
                 print("No saved data file found")  # Debug message
                 # File doesn't exist - that's okay for first run
-                pass
-                
+                return None
+
         except Exception as e:
             print(f"Error in load_saved_data: {str(e)}")
             messagebox.showwarning(
                 "אזהרה",
                 f"שגיאה בטעינת נתונים שמורים: {str(e)}"
             )
+            return None
 
     def load_data_from_json(self, saved_data):
         """
@@ -285,3 +291,59 @@ class DataManager:
 
         self.uploaded_video = None
         self.uploaded_image = None
+
+    def get_empty_fields(self):
+        """
+        Get list of field names that are empty.
+
+        Returns:
+            list: List of tuples (field_name, hebrew_label) for empty fields
+        """
+        # Field name to Hebrew label mapping
+        field_labels = {
+            'event_date': 'תאריך אירוע',
+            'claim_number': 'מספר תביעה',
+            'full_name': 'שם מלא של המבוטח',
+            'policy_number': 'מספר פוליסה',
+            'vehicle_company': 'יצרן הרכב',
+            'vehicle_color': 'צבע הרכב',
+            'vehicle_model': 'דגם הרכב',
+            'vehicle_manufacture_year': 'שנת ייצור',
+            'vehicle_license_number': 'מספר רישוי',
+            'vehicle_engine_type': 'סוג מנוע',
+            'vehicle_engine_capacity': 'נפח מנוע',
+            'vehicle_engine_power': 'הספק מנוע',
+            'vehicle_gearbox': 'סוג גיר',
+            'third_party_name': 'שם צד ג\'',
+            'third_party_policy_number': 'מספר פוליסה צד ג\'',
+            'third_party_contact': 'טלפון צד ג\'',
+            'circumstances': 'נסיבות האירוע',
+            'investigation': 'החקירה עצמה',
+            'summary': 'סיכום'
+        }
+
+        empty_fields = []
+        for field_name, widget in self.form_data.items():
+            try:
+                handler = WidgetHandlerFactory.get_handler(widget)
+                value = handler.get_value(widget)
+
+                # Check if value is empty (empty string or whitespace only)
+                if not value or str(value).strip() == '':
+                    hebrew_label = field_labels.get(field_name, field_name)
+                    empty_fields.append((field_name, hebrew_label))
+            except Exception as e:
+                print(f"Error checking field {field_name}: {e}")
+
+        return empty_fields
+
+    def fill_empty_fields_with_placeholder(self, empty_field_names):
+        """
+        Fill specified empty fields with 'NOT_FILLED' placeholder.
+
+        Args:
+            empty_field_names: List of field names to fill
+        """
+        for field_name in empty_field_names:
+            if field_name in self.form_data:
+                self.set_field_value(field_name, 'NOT_FILLED')

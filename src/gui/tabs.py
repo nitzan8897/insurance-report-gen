@@ -1,95 +1,99 @@
-# gui/tabs.py
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from tkcalendar import DateEntry
 from .utils import create_scrollable_frame
 from ..data.constants import Constants
 
-class TabManager:
-    def __init__(self, root, data_manager):
-        self.root = root
+
+class ModernTabManager:
+    """Manages dynamic form display based on case type."""
+
+    # Define which tabs to show for each case type
+    TAB_VISIBILITY_RULES = {
+        'גניבת רכב': ['basic', 'vehicle', 'additional'],
+        'צד ג\' - רכב': ['basic', 'vehicle', 'third_party', 'additional'],
+        'נזק לרכב': ['basic', 'vehicle', 'additional'],
+        'נזקי פריצה': ['basic', 'vehicle', 'additional'],
+        'חבויות': ['basic', 'additional'],
+        'נח"ל': ['basic', 'additional'],
+        'פריצה לעסק': ['basic', 'additional'],
+        'נזקי אש': ['basic', 'additional'],
+        'פריצה לדירה': ['basic', 'additional'],
+        'גניבת כלי צמ"ה': ['basic', 'additional'],
+        'אבדן תכשיט': ['basic', 'additional'],
+        'גניבת תכשיטים': ['basic', 'additional'],
+        'נזקי מים': ['basic', 'additional'],
+    }
+
+    def __init__(self, parent, data_manager, case_type):
+        self.parent = parent
         self.data_manager = data_manager
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill='both', expand=True, padx=10, pady=5)
-        
-        # Initialize frames
-        self.basic_frame = None
-        self.vehicle_frame = None
-        self.third_party_frame = None
-        self.additional_frame = None
-        
-        # Create tabs
-        self.create_tabs()
-        
-        # Bind event type change if the combobox exists
-        if 'event_type' in self.data_manager.form_data:
-            self.data_manager.form_data['event_type'].bind(
-                '<<ComboboxSelected>>', self.on_event_type_change)
+        self.case_type = case_type
 
-    def create_tabs(self):
-        # Basic Info Tab
-        self.basic_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.basic_frame, text='פרטים בסיסיים')
-        self.create_basic_info_fields(self.basic_frame)
+        # Create notebook
+        self.notebook = ttk.Notebook(parent)
+        self.notebook.pack(fill='both', expand=True)
 
-        # Vehicle Info Tab
-        self.vehicle_frame = ttk.Frame(self.notebook)
-        self.create_vehicle_info_fields(self.vehicle_frame)
+        # Style notebook tabs
+        style = ttk.Style()
+        style.configure('TNotebook.Tab', font=('Alef', 11), padding=[15, 8])
 
-        # Third Party Tab
-        self.third_party_frame = ttk.Frame(self.notebook)
-        self.create_third_party_fields(self.third_party_frame)
+        # Determine which tabs to show
+        tabs_to_show = self.TAB_VISIBILITY_RULES.get(
+            case_type,
+            ['basic', 'additional']  # Default fallback
+        )
 
-        # Additional Info Tab
-        self.additional_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.additional_frame, text='פרטים נוספים')
-        self.create_additional_info_fields(self.additional_frame)
+        # Create only the relevant tabs
+        if 'basic' in tabs_to_show:
+            self.create_basic_tab()
 
-    def create_basic_info_fields(self, parent):
-        scrollable_frame = create_scrollable_frame(parent)
+        if 'vehicle' in tabs_to_show:
+            self.create_vehicle_tab()
 
-        # Event Type (Dropdown)
-        ttk.Label(scrollable_frame, text='סוג תיק').grid(row=0, column=1, padx=5, pady=5, sticky='e')
-        event_type = ttk.Combobox(scrollable_frame, values=Constants.EVENT_TYPES, width=37, state='readonly')
-        event_type.grid(row=0, column=0, padx=5, pady=5)
-        self.data_manager.form_data['event_type'] = event_type
+        if 'third_party' in tabs_to_show:
+            self.create_third_party_tab()
+
+        if 'additional' in tabs_to_show:
+            self.create_additional_tab()
+
+    def create_basic_tab(self):
+        """Create basic information tab."""
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text='פרטים בסיסיים')
+
+        scrollable = create_scrollable_frame(frame)
 
         # Date (DatePicker)
-        ttk.Label(scrollable_frame, text='תאריך אירוע').grid(row=1, column=1, padx=5, pady=5, sticky='e')
-        date_picker = DateEntry(scrollable_frame, width=37, background='darkblue',
-                              foreground='white', borderwidth=2, date_pattern='dd/mm/yyyy')
-        date_picker.grid(row=1, column=0, padx=5, pady=5)
-        self.data_manager.form_data['event_date'] = date_picker
+        self.create_field(scrollable, 0, 'תאריך אירוע', 'event_date',
+                         widget_type='date')
 
-        # Other basic fields
+        # Basic text fields
         fields = [
             ('claim_number', 'מספר תביעה'),
             ('full_name', 'שם מלא של המבוטח'),
             ('policy_number', 'מספר פוליסה')
         ]
 
-        for i, (field_name, label_text) in enumerate(fields, start=2):
-            ttk.Label(scrollable_frame, text=label_text).grid(row=i, column=1, padx=5, pady=5, sticky='e')
-            entry = ttk.Entry(scrollable_frame, width=40)
-            entry.grid(row=i, column=0, padx=5, pady=5)
-            self.data_manager.form_data[field_name] = entry
+        for i, (field_name, label_text) in enumerate(fields, start=1):
+            self.create_field(scrollable, i, label_text, field_name)
 
-    def create_vehicle_info_fields(self, parent):
-        scrollable_frame = create_scrollable_frame(parent)
+    def create_vehicle_tab(self):
+        """Create vehicle information tab."""
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text='פרטי רכב')
+
+        scrollable = create_scrollable_frame(frame)
 
         # Manufacturer (Dropdown)
-        ttk.Label(scrollable_frame, text='יצרן הרכב').grid(row=0, column=1, padx=5, pady=5, sticky='e')
-        manufacturer = ttk.Combobox(scrollable_frame, values=Constants.CAR_MANUFACTURERS, width=37, state='readonly')
-        manufacturer.grid(row=0, column=0, padx=5, pady=5)
-        self.data_manager.form_data['vehicle_company'] = manufacturer
+        self.create_field(scrollable, 0, 'יצרן הרכב', 'vehicle_company',
+                         widget_type='combo', values=Constants.CAR_MANUFACTURERS)
 
         # Color (Dropdown)
-        ttk.Label(scrollable_frame, text='צבע הרכב').grid(row=1, column=1, padx=5, pady=5, sticky='e')
-        color = ttk.Combobox(scrollable_frame, values=Constants.CAR_COLORS, width=37, state='readonly')
-        color.grid(row=1, column=0, padx=5, pady=5)
-        self.data_manager.form_data['vehicle_color'] = color
+        self.create_field(scrollable, 1, 'צבע הרכב', 'vehicle_color',
+                         widget_type='combo', values=Constants.CAR_COLORS)
 
-        # Vehicle fields
+        # Vehicle text fields
         fields = [
             ('vehicle_model', 'דגם הרכב'),
             ('vehicle_manufacture_year', 'שנת ייצור'),
@@ -101,13 +105,14 @@ class TabManager:
         ]
 
         for i, (field_name, label_text) in enumerate(fields, start=2):
-            ttk.Label(scrollable_frame, text=label_text).grid(row=i, column=1, padx=5, pady=5, sticky='e')
-            entry = ttk.Entry(scrollable_frame, width=40)
-            entry.grid(row=i, column=0, padx=5, pady=5)
-            self.data_manager.form_data[field_name] = entry
+            self.create_field(scrollable, i, label_text, field_name)
 
-    def create_third_party_fields(self, parent):
-        scrollable_frame = create_scrollable_frame(parent)
+    def create_third_party_tab(self):
+        """Create third party information tab."""
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text='פרטי צד ג\'')
+
+        scrollable = create_scrollable_frame(frame)
 
         fields = [
             ('third_party_name', 'שם צד ג\''),
@@ -116,43 +121,84 @@ class TabManager:
         ]
 
         for i, (field_name, label_text) in enumerate(fields):
-            ttk.Label(scrollable_frame, text=label_text).grid(row=i, column=1, padx=5, pady=5, sticky='e')
-            entry = ttk.Entry(scrollable_frame, width=40)
-            entry.grid(row=i, column=0, padx=5, pady=5)
-            self.data_manager.form_data[field_name] = entry
+            self.create_field(scrollable, i, label_text, field_name)
 
-    def create_additional_info_fields(self, parent):
-        scrollable_frame = create_scrollable_frame(parent)
+    def create_additional_tab(self):
+        """Create additional information tab with text areas."""
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text='פרטים נוספים')
+
+        scrollable = create_scrollable_frame(frame)
 
         # Circumstances
-        ttk.Label(scrollable_frame, text='נסיבות האירוע').grid(row=0, column=1, padx=5, pady=5, sticky='e')
-        circumstances_text = tk.Text(scrollable_frame, width=40, height=5)
-        circumstances_text.grid(row=0, column=0, padx=5, pady=5)
-        self.data_manager.form_data['circumstances'] = circumstances_text
+        self.create_field(scrollable, 0, 'נסיבות האירוע', 'circumstances',
+                         widget_type='text', height=5)
 
-        # File upload buttons
-        ttk.Label(scrollable_frame, text='סרטוני וידאו').grid(row=1, column=1, padx=5, pady=5, sticky='e')
-        video_upload_button = ttk.Button(scrollable_frame, text='בחר קובץ', 
-                                       command=lambda: self.upload_file('video'))
-        video_upload_button.grid(row=1, column=0, padx=5, pady=5)
+        # File uploads
+        ttk.Label(scrollable, text='סרטוני וידאו',
+                 font=('Alef', 10)).grid(row=1, column=1, padx=5, pady=5, sticky='e')
+        video_btn = ttk.Button(scrollable, text='בחר קובץ וידאו',
+                              command=lambda: self.upload_file('video'))
+        video_btn.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(scrollable_frame, text='התכתבויות').grid(row=2, column=1, padx=5, pady=5, sticky='e')
-        image_upload_button = ttk.Button(scrollable_frame, text='בחר קובץ', 
-                                       command=lambda: self.upload_file('image'))
-        image_upload_button.grid(row=2, column=0, padx=5, pady=5)
+        ttk.Label(scrollable, text='התכתבויות / תמונות',
+                 font=('Alef', 10)).grid(row=2, column=1, padx=5, pady=5, sticky='e')
+        image_btn = ttk.Button(scrollable, text='בחר קובץ תמונה',
+                              command=lambda: self.upload_file('image'))
+        image_btn.grid(row=2, column=0, padx=5, pady=5, sticky='ew')
 
-        # Investigation and Summary
-        ttk.Label(scrollable_frame, text='החקירה עצמה').grid(row=3, column=1, padx=5, pady=5, sticky='e')
-        investigation_text = tk.Text(scrollable_frame, width=40, height=5)
-        investigation_text.grid(row=3, column=0, padx=5, pady=5)
-        self.data_manager.form_data['investigation'] = investigation_text
+        # Investigation
+        self.create_field(scrollable, 3, 'החקירה עצמה', 'investigation',
+                         widget_type='text', height=5)
 
-        ttk.Label(scrollable_frame, text='סיכום').grid(row=4, column=1, padx=5, pady=5, sticky='e')
-        summary_text = tk.Text(scrollable_frame, width=40, height=5)
-        summary_text.grid(row=4, column=0, padx=5, pady=5)
-        self.data_manager.form_data['summary'] = summary_text
+        # Summary
+        self.create_field(scrollable, 4, 'סיכום', 'summary',
+                         widget_type='text', height=5)
+
+    def create_field(self, parent, row, label_text, field_name,
+                    widget_type='entry', **kwargs):
+        """
+        Create a form field with label and appropriate widget.
+
+        Args:
+            parent: Parent frame
+            row: Grid row
+            label_text: Label text
+            field_name: Field name for data_manager
+            widget_type: 'entry', 'combo', 'text', or 'date'
+            **kwargs: Additional arguments for widget
+        """
+        # Label
+        ttk.Label(parent, text=label_text,
+                 font=('Alef', 10)).grid(row=row, column=1, padx=5, pady=5, sticky='e')
+
+        # Widget
+        if widget_type == 'entry':
+            widget = ttk.Entry(parent, width=40, font=('Alef', 10))
+            widget.grid(row=row, column=0, padx=5, pady=5, sticky='ew')
+
+        elif widget_type == 'combo':
+            values = kwargs.get('values', [])
+            widget = ttk.Combobox(parent, values=values, width=37,
+                                 state='readonly', font=('Alef', 10))
+            widget.grid(row=row, column=0, padx=5, pady=5, sticky='ew')
+
+        elif widget_type == 'text':
+            height = kwargs.get('height', 5)
+            widget = tk.Text(parent, width=40, height=height, font=('Alef', 10))
+            widget.grid(row=row, column=0, padx=5, pady=5, sticky='ew')
+
+        elif widget_type == 'date':
+            widget = DateEntry(parent, width=37, background='darkblue',
+                             foreground='white', borderwidth=2,
+                             date_pattern='dd/mm/yyyy', font=('Alef', 10))
+            widget.grid(row=row, column=0, padx=5, pady=5, sticky='ew')
+
+        # Store widget in data manager
+        self.data_manager.form_data[field_name] = widget
 
     def upload_file(self, file_type):
+        """Handle file upload."""
         if file_type == 'video':
             file_path = filedialog.askopenfilename(
                 title="בחר קובץ וידאו",
@@ -160,7 +206,7 @@ class TabManager:
             )
             if file_path:
                 self.data_manager.uploaded_video = file_path
-                messagebox.showinfo("Uploaded", "וידאו הועלה בהצלחה!")
+                messagebox.showinfo("הצלחה", f"וידאו נבחר: {file_path.split('/')[-1]}")
         else:
             file_path = filedialog.askopenfilename(
                 title="בחר קובץ תמונה",
@@ -168,19 +214,4 @@ class TabManager:
             )
             if file_path:
                 self.data_manager.uploaded_image = file_path
-                messagebox.showinfo("Uploaded", "תמונה הועלתה בהצלחה!")
-
-    def on_event_type_change(self, event=None):
-        event_type = self.data_manager.form_data['event_type'].get()
-        vehicle_related_events = ['גניבת רכב', 'צד ג\' - רכב', 'נזק לרכב', 'נזקי פריצה']
-
-        # Remove all optional tabs
-        for tab in [self.vehicle_frame, self.third_party_frame]:
-            if tab in self.notebook.tabs():
-                self.notebook.forget(tab)
-
-        # Add relevant tabs based on event type
-        if event_type in vehicle_related_events:
-            self.notebook.add(self.vehicle_frame, text='פרטי רכב')
-            if event_type == 'צד ג\' - רכב':
-                self.notebook.add(self.third_party_frame, text='פרטי צד ג׳')
+                messagebox.showinfo("הצלחה", f"תמונה נבחרה: {file_path.split('/')[-1]}")
