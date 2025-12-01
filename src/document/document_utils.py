@@ -146,10 +146,20 @@ class DocumentUtils:
 
     def add_bullet_point(self, doc, text, level=0):
         """Add a bullet point with proper RTL formatting - using JUSTIFY like example.docx"""
-        paragraph = doc.add_paragraph(style='List Bullet')
+        # Don't use style, just create paragraph manually with bullet character
+        paragraph = doc.add_paragraph()
         paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        run = paragraph.add_run(text)
+
+        # Add bullet character manually (Hebrew-compatible)
+        run = paragraph.add_run('• ' + text)
         self.set_run_rtl(run)
+
         # Add indentation based on level
         paragraph.paragraph_format.left_indent = Inches(0.5 * (level + 1))
+
+        # Set RTL for paragraph
+        pPr = paragraph._p.get_or_add_pPr()
+        bidi = OxmlElement('w:bidi')
+        pPr.append(bidi)
+
         return paragraph
