@@ -1,0 +1,118 @@
+{
+  "header": {
+    "paragraphs": [
+      {
+        "text": "\t",
+        "alignment": "None",
+        "runs": [
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null,
+            "underline": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null,
+            "underline": null
+          },
+          {
+            "text": "\t",
+            "bold": null,
+            "font_name": null,
+            "font_size": "228600",
+            "underline": null
+          }
+        ]
+      },
+      {
+        "text": "",
+        "alignment": "None",
+        "runs": [
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null,
+            "underline": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null,
+            "underline": null
+          }
+        ]
+      }
+    ],
+    "tables": []
+  },
+  "footer": {
+    "paragraphs": [
+      {
+        "text": "",
+        "alignment": "None",
+        "runs": [
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "font_name": null,
+            "font_size": null
+          }
+        ]
+      }
+    ]
+  },
+  "main_paragraphs": [
+    {
+      "text": "20 ביוני 2024         מספרנו    43211\t                                                                                                        ",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "לכבוד",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "הפניקס – השכרת רכב בע\"מ",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "\t\t\tהנדון \t\t\t:  דו\"ח חקירה ",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "\t\t\t======================",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "\t\t\tהמבוטח\t\t:   אלכסנדר שניידרמן ",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "\t\t\tהאירוע \t\t:   צד ג - רכב",
+      "alignment": "JUSTIFY (3)"
+    },
+    {
+      "text": "\t\t\tמספר רישוי מבוטח  :   80-448-38",
+      "alignment": "JUSTIFY (3)"
+    }
+  ]
+}

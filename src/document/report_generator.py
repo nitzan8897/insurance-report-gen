@@ -65,14 +65,16 @@ class ReportGenerator:
             )
 
             # Add spacing
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
             # Add recipient section
             self.doc_utils.make_hebrew_paragraph(doc, "לכבוד", bold=True)
             self.doc_utils.make_hebrew_paragraph(doc, 'הפניקס חברה לביטוח בע"מ', bold=True)
-            
+
             # Add spacing
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
             # Add report title and details
             headers = [
@@ -88,14 +90,15 @@ class ReportGenerator:
 
             for text in headers:
                 self.doc_utils.make_hebrew_paragraph(
-                    doc, 
-                    text, 
+                    doc,
+                    text,
                     bold=True,
                     alignment=WD_PARAGRAPH_ALIGNMENT.CENTER
                 )
 
             # Add spacing after headers
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         except Exception as e:
             print(f"Error in generate_header: {str(e)}")
@@ -138,7 +141,8 @@ class ReportGenerator:
                 self.doc_utils.add_bullet_point(doc, action)
 
             # Add spacing after general section
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         except Exception as e:
             print(f"Error in generate_general_section: {str(e)}")
@@ -162,7 +166,8 @@ class ReportGenerator:
                 self.doc_utils.make_hebrew_paragraph(doc, detail)
 
             # Add spacing after vehicle section
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         except Exception as e:
             print(f"Error in generate_vehicle_section: {str(e)}")
@@ -175,7 +180,8 @@ class ReportGenerator:
             if circumstances:
                 self.doc_utils.create_section_header(doc, "3. נסיבות האירוע")
                 self.doc_utils.make_hebrew_paragraph(doc, circumstances)
-                doc.add_paragraph()
+                spacing = doc.add_paragraph()
+                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         except Exception as e:
             print(f"Error in generate_circumstances_section: {str(e)}")
@@ -188,7 +194,8 @@ class ReportGenerator:
             if summary:
                 self.doc_utils.create_section_header(doc, "4. סיכום")
                 self.doc_utils.make_hebrew_paragraph(doc, summary)
-                doc.add_paragraph()
+                spacing = doc.add_paragraph()
+                spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         except Exception as e:
             print(f"Error in generate_summary_section: {str(e)}")
@@ -197,7 +204,8 @@ class ReportGenerator:
     def generate_signature(self, doc):
         """Generate the signature section of the report."""
         try:
-            doc.add_paragraph()
+            spacing = doc.add_paragraph()
+            spacing.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
             self.doc_utils.make_hebrew_paragraph(doc, "בכבוד רב,")
             self.doc_utils.make_hebrew_paragraph(doc, "אניגמה חקירות")
 

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(pdca-ai-coding-skill)",
+      "Bash(dir /s \"D:\\Workspace\\insurance-report-gen\")",
+      "Bash(mkdir:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m unittest:*)",
+      "Bash(python:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
