@@ -1,10 +1,13 @@
 # src/data/data_manager.py
+"""
+Data manager for handling form data persistence and widget value management.
+Uses widget handlers for clean separation of concerns.
+"""
 import json
 import os
-import tkinter as tk
-from tkinter import ttk, messagebox
-from tkcalendar import DateEntry
-from datetime import datetime
+from tkinter import messagebox
+
+from .widget_handlers import WidgetHandlerFactory
 
 class DataManager:
     def __init__(self):
@@ -50,63 +53,19 @@ class DataManager:
     def load_data_from_json(self, saved_data):
         """
         Loads data from a JSON object into the form fields.
-        
+        Uses widget handlers for clean, maintainable code.
+
         Args:
             saved_data (dict): Dictionary containing the saved form data
         """
-        if not saved_data:  # If saved_data is None or empty
-            print("No data to load")  # Debug message
+        if not saved_data:
+            print("No data to load")
             return
 
         try:
-            # Iterate through the saved data
-            for key, value in saved_data.items():
-                # Skip if the field doesn't exist in the form
-                if key not in self.form_data:
-                    print(f"Field {key} not found in form")  # Debug message
-                    continue
-
-                widget = self.form_data[key]
-                
-                # Handle different widget types
-                if isinstance(widget, tk.Text):
-                    widget.delete('1.0', tk.END)
-                    if value:
-                        widget.insert('1.0', value)
-
-                elif isinstance(widget, DateEntry):
-                    try:
-                        if value:
-                            if isinstance(value, str):
-                                # Try different date formats
-                                for date_format in ['%d/%m/%Y', '%Y-%m-%d', '%d.%m.%Y']:
-                                    try:
-                                        date_obj = datetime.strptime(value, date_format)
-                                        widget.set_date(date_obj)
-                                        break
-                                    except ValueError:
-                                        continue
-                    except Exception as e:
-                        print(f"Error setting date for {key}: {str(e)}")
-
-                elif isinstance(widget, ttk.Combobox):
-                    if value in widget['values']:
-                        widget.set(value)
-                    else:
-                        widget.set(value)
-
-                elif isinstance(widget, (ttk.Entry, tk.Entry)):
-                    widget.delete(0, tk.END)
-                    if value:
-                        widget.insert(0, str(value))
-
-            # Handle file paths separately
-            if 'video_file' in saved_data:
-                self.uploaded_video = saved_data['video_file']
-            if 'correspondence_image' in saved_data:
-                self.uploaded_image = saved_data['correspondence_image']
-
-            print("Data loaded into widgets successfully")  # Debug message
+            self._load_widget_values(saved_data)
+            self._load_file_paths(saved_data)
+            print("Data loaded into widgets successfully")
 
         except Exception as e:
             print(f"Error loading data into widgets: {str(e)}")
@@ -115,100 +74,156 @@ class DataManager:
                 f"שגיאה בטעינת הנתונים לטופס: {str(e)}"
             )
 
-    def save_data(self):
-        """Saves the current form data to a JSON file."""
+    def _load_widget_values(self, saved_data):
+        """
+        Load values into widgets using appropriate handlers.
+
+        Args:
+            saved_data (dict): Dictionary with field names and values
+        """
+        for key, value in saved_data.items():
+            if key not in self.form_data:
+                print(f"Field {key} not found in form")
+                continue
+
+            widget = self.form_data[key]
+            self._set_widget_value(widget, value, key)
+
+    def _set_widget_value(self, widget, value, field_name):
+        """
+        Set a single widget's value using the appropriate handler.
+
+        Args:
+            widget: The Tkinter widget to set value for
+            value: The value to set
+            field_name: Name of the field (for error reporting)
+        """
         try:
-            data_to_save = {}
-            
-            for key, widget in self.form_data.items():
-                # Get values based on widget type
-                if isinstance(widget, tk.Text):
-                    data_to_save[key] = widget.get("1.0", tk.END).strip()
-                elif isinstance(widget, DateEntry):
-                    data_to_save[key] = widget.get_date().strftime('%d/%m/%Y')
-                elif isinstance(widget, (ttk.Entry, tk.Entry, ttk.Combobox)):
-                    data_to_save[key] = widget.get()
+            handler = WidgetHandlerFactory.get_handler(widget)
+            handler.set_value(widget, value)
+        except ValueError as e:
+            # Unsupported widget type
+            print(f"Cannot set value for {field_name}: {e}")
+        except Exception as e:
+            print(f"Error setting value for {field_name}: {e}")
 
-            # Add file paths
-            if self.uploaded_video:
-                data_to_save['video_file'] = self.uploaded_video
-            if self.uploaded_image:
-                data_to_save['correspondence_image'] = self.uploaded_image
+    def _load_file_paths(self, saved_data):
+        """
+        Load file paths from saved data.
 
-            # Save to file
-            with open('saved_data.json', 'w', encoding='utf-8') as f:
-                json.dump(data_to_save, f, ensure_ascii=False, indent=4)
+        Args:
+            saved_data (dict): Dictionary containing saved data
+        """
+        if 'video_file' in saved_data:
+            self.uploaded_video = saved_data['video_file']
+        if 'correspondence_image' in saved_data:
+            self.uploaded_image = saved_data['correspondence_image']
 
+    def save_data(self):
+        """
+        Saves the current form data to a JSON file.
+        Uses widget handlers for clean, maintainable code.
+        """
+        try:
+            data_to_save = self._collect_widget_values()
+            self._add_file_paths_to_save(data_to_save)
+            self._write_to_json_file(data_to_save)
             messagebox.showinfo("הצלחה", "הנתונים נשמרו בהצלחה!")
 
         except Exception as e:
             print(f"Error saving data: {str(e)}")
             messagebox.showerror(
-                "שגיאה", 
+                "שגיאה",
                 f"שגיאה בשמירת הנתונים: {str(e)}"
             )
 
+    def _collect_widget_values(self):
+        """
+        Collect values from all widgets using appropriate handlers.
+
+        Returns:
+            dict: Dictionary with field names and their values
+        """
+        data_to_save = {}
+        for key, widget in self.form_data.items():
+            try:
+                handler = WidgetHandlerFactory.get_handler(widget)
+                data_to_save[key] = handler.get_value(widget)
+            except ValueError:
+                # Unsupported widget type, skip it
+                print(f"Skipping unsupported widget type for {key}")
+            except Exception as e:
+                print(f"Error getting value for {key}: {e}")
+        return data_to_save
+
+    def _add_file_paths_to_save(self, data_dict):
+        """
+        Add file paths to the data dictionary.
+
+        Args:
+            data_dict (dict): Dictionary to add file paths to
+        """
+        if self.uploaded_video:
+            data_dict['video_file'] = self.uploaded_video
+        if self.uploaded_image:
+            data_dict['correspondence_image'] = self.uploaded_image
+
+    def _write_to_json_file(self, data, filename='saved_data.json'):
+        """
+        Write data dictionary to a JSON file.
+
+        Args:
+            data (dict): Data to write
+            filename (str): Name of the file to write to
+        """
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
     def get_field_value(self, field_name):
-        """Gets the value of a form field."""
-        if field_name in self.form_data:
-            widget = self.form_data[field_name]
-            
-            if isinstance(widget, tk.Text):
-                return widget.get("1.0", tk.END).strip()
-            elif isinstance(widget, DateEntry):
-                return widget.get_date().strftime("%d.%m.%Y")
-            elif isinstance(widget, (ttk.Entry, tk.Entry, ttk.Combobox)):
-                return widget.get()
-        
-        return ""
+        """
+        Gets the value of a form field using the appropriate handler.
+
+        Args:
+            field_name (str): Name of the field to get value from
+
+        Returns:
+            str: The field's value, or empty string if not found
+        """
+        if field_name not in self.form_data:
+            return ""
+
+        widget = self.form_data[field_name]
+        try:
+            handler = WidgetHandlerFactory.get_handler(widget)
+            return handler.get_value(widget)
+        except Exception as e:
+            print(f"Error getting value for {field_name}: {e}")
+            return ""
 
     def set_field_value(self, field_name, value):
-        """Sets the value of a form field."""
+        """
+        Sets the value of a form field using the appropriate handler.
+
+        Args:
+            field_name (str): Name of the field to set value for
+            value: The value to set
+        """
         if field_name not in self.form_data:
             return
 
         widget = self.form_data[field_name]
-
-        try:
-            if isinstance(widget, tk.Text):
-                widget.delete('1.0', tk.END)
-                if value:
-                    widget.insert('1.0', str(value))
-
-            elif isinstance(widget, DateEntry):
-                if value:
-                    if isinstance(value, str):
-                        try:
-                            date_obj = datetime.strptime(value, '%d/%m/%Y')
-                            widget.set_date(date_obj)
-                        except ValueError:
-                            print(f"Invalid date format for {field_name}: {value}")
-                    else:
-                        widget.set_date(value)
-
-            elif isinstance(widget, ttk.Combobox):
-                if value in widget['values']:
-                    widget.set(value)
-                else:
-                    widget.set(value)
-
-            elif isinstance(widget, (ttk.Entry, tk.Entry)):
-                widget.delete(0, tk.END)
-                if value:
-                    widget.insert(0, str(value))
-
-        except Exception as e:
-            print(f"Error setting value for {field_name}: {str(e)}")
+        self._set_widget_value(widget, value, field_name)
 
     def clear_all_fields(self):
-        """Clears all form fields."""
+        """
+        Clears all form fields using appropriate handlers.
+        """
         for widget in self.form_data.values():
-            if isinstance(widget, tk.Text):
-                widget.delete('1.0', tk.END)
-            elif isinstance(widget, (ttk.Entry, tk.Entry, ttk.Combobox)):
-                widget.delete(0, tk.END)
-            elif isinstance(widget, DateEntry):
-                widget.set_date(datetime.now())
+            try:
+                handler = WidgetHandlerFactory.get_handler(widget)
+                handler.clear_value(widget)
+            except Exception as e:
+                print(f"Error clearing widget: {e}")
 
         self.uploaded_video = None
         self.uploaded_image = None
