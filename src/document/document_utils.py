@@ -47,8 +47,8 @@ class DocumentUtils:
 
     def add_custom_header_footer(self, doc):
         """
-        Add minimal header and footer matching example.docx style.
-        Based on the example, header and footer are kept minimal/empty.
+        Add professional header and footer with company branding.
+        Simple, clean design suitable for official investigation reports.
         """
         section = doc.sections[0]
 
@@ -57,15 +57,36 @@ class DocumentUtils:
         bidi = OxmlElement('w:bidi')
         pPr.append(bidi)
 
-        # Create minimal header (matching example.docx - mostly empty)
+        # Create simple professional header
         header = section.header
-        header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-        header_para.text = '\t'  # Just a tab character to match example
+        if not header.paragraphs:
+            header_para = header.add_paragraph()
+        else:
+            header_para = header.paragraphs[0]
 
-        # Create minimal footer (matching example.docx - empty)
+        header_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        header_run = header_para.add_run('אניגמה חקירות  |  ENIGMA INVESTIGATIONS')
+        header_run.font.name = 'David'
+        header_run.font.size = Pt(12)
+        header_run.bold = True
+
+        # Create simple professional footer
         footer = section.footer
-        footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-        footer_para.text = ''  # Empty to match example
+        if not footer.paragraphs:
+            footer_para = footer.add_paragraph()
+        else:
+            footer_para = footer.paragraphs[0]
+
+        footer_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        # Contact information in footer
+        footer_run = footer_para.add_run(
+            'רחוב בית הלל 28, תל-אביב 67017  |  '
+            'טל: 03-5222766  |  פקס: 03-5244788  |  '
+            'Email: enigmainv@012.net.il'
+        )
+        footer_run.font.name = 'David'
+        footer_run.font.size = Pt(9)
 
     def make_hebrew_paragraph(self, doc, text, bold=False, size=11, alignment=WD_PARAGRAPH_ALIGNMENT.RIGHT):
         """Create a hebrew paragraph with proper RTL settings"""
